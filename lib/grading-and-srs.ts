@@ -1,1 +1,95 @@
-import { prisma } from './prisma';export interface QuestionSubmission {  questionId: string;  userAnswer: string;}function normalizeGermanAnswer(input: string): string {  return input.trim().replace(/\s+/g, ' ').replace(/[.!?]+$/, '').trim();}export function diagnoseGermanMistakeEgyptian(  userAns: string,  expectedAns: string,  explanationAr: string): string {  const u = normalizeGermanAnswer(userAns);  const e = normalizeGermanAnswer(expectedAns);  if (u.toLowerCase() === e.toLowerCase() && u !== e) {    return `إجابتك صح في الكلمة، بس خد بالك من قاعدة الحروف الكبيرة (Großschreibung) في الألماني! الصح تتكتب كدة: "${expectedAns}". ${explanationAr}`;  }  const umlautNormalizedExpected = e.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss');  if (u.toLowerCase() === umlautNormalizedExpected && u.toLowerCase() !== e.toLowerCase()) {    return `قربت جداً يا بطل! بس نسيت النقطتين (Umlaut: ä/ö/ü) أو حرف الـ (ß). الصح: "${expectedAns}". ${explanationAr}`;  }  return explanationAr;}export async function submitAndGradeExercise(  userId: string,  exerciseId: string,  submissions: QuestionSubmission[],  timeSpentSec: number) {  if (!submissions || submissions.length === 0 || submissions.every((s) => !s.userAnswer?.trim())) {    throw new Error('لازم تحاول تحل الأسئلة بنفسك الأول قبل ما نصحح ونوريك الإجابات النموذجية!');  }  const exercise = await prisma.exercise.findUnique({    where: { id: exerciseId },    include: { questions: { orderBy: { questionNumber: 'asc' } } },  });  if (!exercise) {    throw new Error('التمرين غير موجود في قاعدة البيانات.');  }  let correctCount = 0;  const gradedResults = [];  for (const question of exercise.questions) {    const sub = submissions.find((s) => s.questionId === question.id);    const rawUserAnswer = sub?.userAnswer?.trim() ?? '';    const normUser = normalizeGermanAnswer(rawUserAnswer);    const allValidAnswers = [question.officialAnswer, ...(question.acceptedAlternatives || [])].map(normalizeGermanAnswer);    const isCorrect = rawUserAnswer.length > 0 && (allValidAnswers.includes(normUser) || allValidAnswers.some((va) => va.toLowerCase() === normUser.toLowerCase()));    if (isCorrect) correctCount++;    gradedResults.push({      questionId: question.id,      questionNumber: question.questionNumber,      promptGerman: question.promptGerman,      userAnswer: rawUserAnswer,      isCorrect,      officialAnswer: question.officialAnswer,      acceptedAlternatives: question.acceptedAlternatives,      feedbackEgyptian: isCorrect        ? `الله ينور عليك! إجابة صحيحة 100%. ${question.explanationEgyptian}`        : diagnoseGermanMistakeEgyptian(rawUserAnswer, question.officialAnswer, question.explanationEgyptian),    });  }  const totalQuestions = exercise.questions.length;  const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;  const attempt = await prisma.userExerciseAttempt.create({    data: {      userId,      exerciseId,      submittedAnswers: gradedResults,      scorePercentage,      correctCount,      totalQuestions,      timeSpentSec,    },  });  return { attemptId: attempt.id, scorePercentage, correctCount, totalQuestions, gradedResults };}
+import { prisma } from './prisma';
+
+export interface QuestionSubmission {
+  questionId: string;
+  userAnswer: string;
+}
+
+function normalizeGermanAnswer(input: string): string {
+  return input.trim().replace(/\s+/g, ' ').replace(/[.!?]+$/, '').trim();
+}
+
+export function diagnoseGermanMistakeEgyptian(
+  userAns: string,
+  expectedAns: string,
+  explanationAr: string
+): string {
+  const u = normalizeGermanAnswer(userAns);
+  const e = normalizeGermanAnswer(expectedAns);
+
+  if (u.toLowerCase() === e.toLowerCase() && u !== e) {
+    return `إجابتك صح في الكلمة، بس خد بالك من قاعدة الحروف الكبيرة (Großschreibung) في الألماني! الصح تتكتب كدة: "${expectedAns}". ${explanationAr}`;
+  }
+
+  const umlautNormalizedExpected = e.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss');
+  if (u.toLowerCase() === umlautNormalizedExpected && u.toLowerCase() !== e.toLowerCase()) {
+    return `قربت جداً يا بطل! بس نسيت النقطتين (Umlaut: ä/ö/ü) أو حرف الـ (ß). الصح: "${expectedAns}". ${explanationAr}`;
+  }
+
+  return explanationAr;
+}
+
+export async function submitAndGradeExercise(
+  userId: string,
+  exerciseId: string,
+  submissions: QuestionSubmission[],
+  timeSpentSec: number
+) {
+  if (!submissions || submissions.length === 0 || submissions.every((s) => !s.userAnswer?.trim())) {
+    throw new Error('لازم تحاول تحل الأسئلة بنفسك الأول قبل ما نصحح ونوريك الإجابات النموذجية!');
+  }
+
+  const exercise = await prisma.exercise.findUnique({
+    where: { id: exerciseId },
+    include: { questions: { orderBy: { questionNumber: 'asc' } } },
+  });
+
+  if (!exercise) {
+    throw new Error('التمرين غير موجود في قاعدة البيانات.');
+  }
+
+  let correctCount = 0;
+  const gradedResults = [];
+
+  for (const question of exercise.questions) {
+    const sub = submissions.find((s) => s.questionId === question.id);
+    const rawUserAnswer = sub?.userAnswer?.trim() ?? '';
+    const normUser = normalizeGermanAnswer(rawUserAnswer);
+
+    const allValidAnswers = [question.officialAnswer, ...(question.acceptedAlternatives || [])].map(normalizeGermanAnswer);
+    const isCorrect = rawUserAnswer.length > 0 && (allValidAnswers.includes(normUser) || allValidAnswers.some((va) => va.toLowerCase() === normUser.toLowerCase()));
+
+    if (isCorrect) correctCount++;
+
+    gradedResults.push({
+      questionId: question.id,
+      questionNumber: question.questionNumber,
+      promptGerman: question.promptGerman,
+      userAnswer: rawUserAnswer,
+      isCorrect,
+      officialAnswer: question.officialAnswer,
+      acceptedAlternatives: question.acceptedAlternatives,
+      feedbackEgyptian: isCorrect
+        ? `الله ينور عليك! إجابة صحيحة 100%. ${question.explanationEgyptian}`
+        : diagnoseGermanMistakeEgyptian(rawUserAnswer, question.officialAnswer, question.explanationEgyptian),
+    });
+  }
+
+  const totalQuestions = exercise.questions.length;
+  const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+  const attempt = await prisma.userExerciseAttempt.create({
+    data: {
+      userId,
+      exerciseId,
+      submittedAnswers: gradedResults,
+      scorePercentage,
+      correctCount,
+      totalQuestions,
+      timeSpentSec,
+    },
+  });
+
+  return { attemptId: attempt.id, scorePercentage, correctCount, totalQuestions, gradedResults };
+}
+
