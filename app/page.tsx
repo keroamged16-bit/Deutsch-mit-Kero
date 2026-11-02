@@ -1,133 +1,48 @@
-'use client';
+﻿import Link from "next/link";
 
-import React, { useState } from 'react';
-import GermanAudioButton from '@/components/GermanAudioButton';
-
-const UNITS_SUMMARY = [
-  { num: 1, titleDe: 'Hallo Leute!', titleAr: 'أهلاً يا جماعة! (الحروف، الأدوات، الضمائر)', pages: '1–37', coverage: 100, mastery: 88 },
-  { num: 2, titleDe: 'Ja, er ist verheiratet.', titleAr: 'المضارع، الملكية، المهن، العائلة، الأرقام', pages: '39–72', coverage: 65, mastery: 72 },
-  { num: 3, titleDe: 'Das ist kein Hut.', titleAr: 'النفي بـ nicht/kein، المظهر، الشخصية، الملابس', pages: '74–98', coverage: 0, mastery: 0 },
-  { num: 4, titleDe: 'Unser neues Haus', titleAr: 'تكوين الأسئلة W-Fragen & Ja/Nein، الأثاث، الألوان', pages: '100–126', coverage: 0, mastery: 0 },
-  { num: 5, titleDe: 'Ich liebe Pizza.', titleAr: 'الأفعال المساعدة Modalverben، المأكولات، الروتين', pages: '128–157', coverage: 0, mastery: 0 },
-  { num: 6, titleDe: 'Was machst du gerne?', titleAr: 'المفعول به Akkusativ، الهوايات، الساعات، الرياضة', pages: '159–203', coverage: 0, mastery: 0 },
-  { num: 7, titleDe: 'Genießen Sie Ihren Aufenthalt!', titleAr: 'المجرور Dativ، في الفندق، وفي المدينة', pages: '205–250', coverage: 0, mastery: 0 },
-  { num: 8, titleDe: 'Ich bin vor kurzem hergezogen.', titleAr: 'الأفعال المنفصلة، الأعمال المنزلية، المواصلات', pages: '251–288', coverage: 0, mastery: 0 },
-  { num: 9, titleDe: 'Klingt nach traumhafter Reise.', titleAr: 'تركيب الكلمات، حروف الزمان، التواريخ، السفر', pages: '289–329', coverage: 0, mastery: 0 },
-  { num: 10, titleDe: 'Es ist etwa 22 Grad.', titleAr: 'الماضي التام Perfekt، الطقس، وفي المكتب', pages: '330–362', coverage: 0, mastery: 0 },
-  { num: 11, titleDe: 'Du warst tolle Professorin.', titleAr: 'التمني Konjunktiv II، المقارنة والتفضيل، الشقق', pages: '364–399', coverage: 0, mastery: 0 },
-  { num: 12, titleDe: 'Ich habe Schmerzen.', titleAr: 'صيغة الأمر Imperativ، ماضي haben/sein، الجسم والأمراض', pages: '402–435', coverage: 0, mastery: 0 },
-];
-
-export default function DeutschMitKeroApp() {
-  const [missionActive, setMissionActive] = useState(false);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const sampleQuestions = [
-    { num: 1, prompt: '___ Tisch steht im Wohnzimmer.', options: ['der', 'das', 'die'], official: 'der', exp: 'كلمة Tisch مذكر في الألماني، فتاخد der (كتاب الطالب ص 15).' },
-    { num: 2, prompt: '___ Katze schläft auf dem Sofa.', options: ['der', 'das', 'die'], official: 'die', exp: 'كلمة Katze مؤنث وبتنتهي بـ -e، فتاخد die (كتاب الطالب ص 15).' },
-    { num: 3, prompt: '___ Haus ist groß.', options: ['der', 'das', 'die'], official: 'das', exp: 'كلمة Haus محايد، فتاخد das (كتاب الطالب ص 15).' },
-  ];
-
-  const handleGradeSample = () => {
-    if (Object.keys(selectedAnswers).length < sampleQuestions.length) {
-      setErrorMsg('لازم تحاول تجاوب على كل الأسئلة الأول قبل ما نكشف الحلول الرسمية!');
-      return;
-    }
-    setErrorMsg(null);
-    setSubmitted(true);
-  };
-
+export default function Dashboard() {
   return (
-    <div dir="rtl" className="min-h-screen bg-[#FAF7F2] text-[#1C2826]">
-      <header className="sticky top-0 z-30 bg-[#1B4332] text-[#FAF7F2] shadow-md border-b border-[#C5A059]/30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C5A059] text-[#1B4332] font-extrabold flex items-center justify-center text-lg">DK</div>
-            <div>
-              <h1 className="text-lg font-bold flex items-center gap-2">
-                <span>Deutsch mit Kero</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-[#52796F] text-white font-normal">Startbereit A1 (12 Units)</span>
-              </h1>
-              <p className="text-xs text-[#D8E2DC]">من الصفر لجاهزية امتحان معهد جوته (Goethe-Zertifikat A1)</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setMissionActive(!missionActive)}
-            className="px-5 py-2 rounded-xl bg-[#C5A059] text-[#1B4332] font-bold text-sm hover:bg-[#d4b26a] transition"
-          >
-            {missionActive ? '🏠 العودة للرئيسية' : '🚀 ابدأ مهمة اليوم (Start Studying)'}
-          </button>
-        </div>
+    <div className="max-w-5xl mx-auto space-y-8">
+      <header>
+        <h1 className="text-4xl font-bold text-brand-green">Willkommen, Kero!</h1>
+        <p className="text-brand-sage mt-2 text-lg">Dein Ziel: Goethe-Zertifikat A1</p>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-        {missionActive && (
-          <section className="rounded-2xl bg-white border-2 border-[#1B4332] p-6 shadow-lg space-y-4">
-            <h2 className="text-xl font-bold text-[#1B4332]">تمرين الكتاب التفاعلي (Startbereit ص 15 — Lektion 1 Übung a)</h2>
-            {errorMsg && <div className="p-3 rounded-xl bg-red-50 border border-red-300 text-red-800 text-sm font-medium">⚠️ {errorMsg}</div>}
-            <div className="space-y-3">
-              {sampleQuestions.map((q) => (
-                <div key={q.num} className="p-4 rounded-xl border border-gray-200 bg-[#FAF7F2]/60 space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <p dir="ltr" className="font-bold text-base text-[#1B4332]">{q.num}. {q.prompt}</p>
-                    <GermanAudioButton text={q.prompt.replace('___', q.official)} category="SAETZE" />
-                  </div>
-                  <div dir="ltr" className="flex items-center gap-3 pt-1">
-                    {q.options.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        disabled={submitted}
-                        onClick={() => setSelectedAnswers((prev) => ({ ...prev, [q.num]: opt }))}
-                        className={`px-4 py-1.5 rounded-lg border text-sm font-semibold ${
-                          selectedAnswers[q.num] === opt ? 'bg-[#1B4332] text-white border-[#1B4332]' : 'bg-white text-[#1B4332] border-gray-300'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                  {submitted && (
-                    <div className={`mt-2 p-3 rounded-lg text-xs font-medium ${selectedAnswers[q.num] === q.official ? 'bg-green-50 text-green-900' : 'bg-amber-50 text-amber-900'}`}>
-                      {selectedAnswers[q.num] === q.official
-                        ? `✅ إجابة صحيحة (${q.official})! ${q.exp}`
-                        : `❌ إجابتك (${selectedAnswers[q.num]})؛ الإجابة الرسمية هي (${q.official}). ${q.exp}`}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button onClick={handleGradeSample} className="px-6 py-2.5 rounded-xl bg-[#1B4332] text-white font-bold text-sm">
-              ✔️ تسليم الإجابات والتصحيح الفوري
-            </button>
-          </section>
-        )}
+      <section className="bg-white p-8 rounded-xl shadow-sm border-l-4 border-brand-green">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Today's Mission</h2>
+        <p className="text-gray-600 mb-6">45 Minutes • Unit 1: Vocabulary & Grammar Practice</p>
+        <Link 
+          href="/mission" 
+          className="inline-block bg-brand-green text-brand-cream font-bold text-lg px-8 py-4 rounded-lg hover:bg-[#153d31] transition-colors shadow-md"
+        >
+          Start Studying
+        </Link>
+      </section>
 
-        <section className="rounded-2xl bg-white border border-[#52796F]/25 p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-bold text-[#1B4332]">منهج الكتاب الكامل — الـ 12 وحدة (Startbereit A1 - Deutsch mit HEND)</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {UNITS_SUMMARY.map((u) => (
-              <div key={u.num} className="p-4 rounded-xl border border-gray-200 bg-[#FAF7F2]/50 flex flex-col justify-between gap-3">
-                <div>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#1B4332] text-white">Lektion {u.num} (ص {u.pages})</span>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <h3 dir="ltr" className="font-bold text-base text-[#1B4332]">{u.titleDe}</h3>
-                    <GermanAudioButton text={u.titleDe} category="SAETZE" />
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">{u.titleAr}</p>
-                </div>
-                <div className="pt-2 border-t border-gray-200 flex items-center justify-between text-xs">
-                  <span>تغطية التمارين: <strong>{u.coverage}%</strong></span>
-                  <span>درجة الإتقان: <strong>{u.mastery}%</strong></span>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-xl text-brand-green mb-4">Mein Lehrbuch</h3>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-sm mb-1 text-gray-700">
+                <span>Unit 1: Guten Tag</span>
+                <span>20%</span>
               </div>
-            ))}
+              <div className="w-full bg-brand-cream h-2 rounded-full overflow-hidden">
+                <div className="bg-brand-gold h-full w-1/5 rounded-full"></div>
+              </div>
+            </div>
           </div>
-        </section>
-      </main>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-xl text-brand-green mb-4">Wortschatz</h3>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700">Reviews due today:</span>
+            <span className="bg-brand-sage/20 text-brand-green px-4 py-1 rounded-full font-bold">12 Words</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
