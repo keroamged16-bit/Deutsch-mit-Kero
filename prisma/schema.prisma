@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum VerificationStatus {
+  VISUALLY_VERIFIED
+  KEY_VERIFIED
+  REVIEWED_CORRECTION
+  DISCREPANCY
+  MISSING_SOURCE
+  READY_FOR_IMPORT
+}
+
+enum ContentOrigin {
+  ORIGINAL_TEXTBOOK
+  VERIFIED_TRANSCRIPT_TTS
+  AI_SUPPLEMENTARY
+}
+
+enum SkillType {
+  WORTSCHATZ
+  GRAMMATIK
+  HOEREN
+  LESEN
+  SCHREIBEN
+  SPRECHEN
+}
+
+enum ExerciseFormat {
+  MULTIPLE_CHOICE
+  RICHTIG_FALSCH
+  GAP_FILL
+  SENTENCE_TRANSFORM
+  WORD_FORMATION
+  DATE_ORDINAL
+}
+
+enum PartOfSpeech {
+  NOMEN
+  VERB
+  ADJEKTIV
+  PRONOMEN
+  PRAEPOSITION
+  PHRASE
+}
+
+enum GrammaticalGender {
+  MASKULIN
+  FEMININ
+  NEUTRUM
+  PLURAL
+  NONE
+}
+
+enum AudioCategory {
+  WORTSCHATZ
+  SAETZE
+  HOEREN
+}
+
+enum AudioStatus {
+  PENDING
+  GENERATING
+  READY
+  FALLBACK_ONLY
+  FAILED
+}
+
+model SourceBook {
+  id            String              @id @default(cuid())
+  code          String              @unique
+  printedTitle  String
+  authorOrBrand String
+  level         String              @default("A1")
+  totalUnits    Int                 @default(12)
+  notes         String?
+  units         Unit[]
+  discrepancies DiscrepancyRecord[]
+  createdAt     DateTime            @default(now())
+}
+
+model DiscrepancyRecord {
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  unitNumber         Int
+  locationReference  String
+  studentBookReading String
+  answerKeyReading   String
+  impact             String
+  reviewedDecision   String
+  status             VerificationStatus
+  sourceBookId       String
+  sourceBook         SourceBook         @relation(fields: [sourceBookId], references: [id])
+  createdAt          DateTime           @default(now())
+}
+
+model Unit {
+  id                   String             @id @default(cuid())
+  unitNumber           Int                @unique
+  slug                 String             @unique
+  germanTitle          String
+  arabicTitle          String
+  startPagePrinted     Int
+  endPagePrinted       Int
+  sourcePdfName        String
+  verificationStatus   VerificationStatus @default(READY_FOR_IMPORT)
+  passThresholdOverall Float              @default(80.0)
+  minSkillThresholds   Json
+  sourceBookId         String
+  sourceBook           SourceBook         @relation(fields: [sourceBookId], references: [id])
+  grammarTopics        GrammarTopic[]
+  vocabularyGroups     VocabularyGroup[]
+  vocabularyItems      VocabularyItem[]
+  exercises            Exercise[]
+  listeningPassages    ListeningPassage[]
+  readingPassages      ReadingPassage[]
+  writingPrompts       WritingPrompt[]
+  speakingPrompts      SpeakingPrompt[]
+  userProgress         UserUnitProgress[]
+  createdAt            DateTime           @default(now())
+}
+
+model GrammarTopic {
+  id                  String             @id @default(cuid())
+  code                String             @unique
+  orderIndex          Int
+  germanTitle         String
+  arabicTitle         String
+  printedPages        String
+  sourcePdfPages      String?
+  explanationEgyptian String             @db.Text
+  patternSummary      Json
+  commonMistakes      String[]
+  examplesWithAudio   Json
+  origin              ContentOrigin      @default(ORIGINAL_TEXTBOOK)
+  verificationStatus  VerificationStatus @default(VISUALLY_VERIFIED)
+  unitId              String
+  unit                Unit               @relation(fields: [unitId], references: [id])
+}
+
+model VocabularyGroup {
+  id           String           @id @default(cuid())
+  code         String           @unique
+  orderIndex   Int
+  germanTitle  String
+  arabicTitle  String
+  printedPages String
+  unitId       String
+  unit         Unit             @relation(fields: [unitId], references: [id])
+  items        VocabularyItem[]
+}
+
+model VocabularyItem {
+  id                    String                @id @default(cuid())
+  code                  String                @unique
+  headword              String
+  cleanNoun             String?
+  definiteArticle       String?
+  pluralForm            String?
+  partOfSpeech          PartOfSpeech
+  gender                GrammaticalGender     @default(NONE)
+  arabicMeaning         String
+  exampleSentenceGerman String?
+  exampleSentenceArabic String?
+  printedPage           Int
+  hasUmlautOrEszett     Boolean               @default(false)
+  origin                ContentOrigin         @default(ORIGINAL_TEXTBOOK)
+  verificationStatus    VerificationStatus    @default(VISUALLY_VERIFIED)
+  unitId                String
+  unit                  Unit                  @relation(fields: [unitId], references: [id])
+  groupId               String
+  group                 VocabularyGroup       @relation(fields: [groupId], references: [id])
+  userStates            UserVocabularyState[]
+}
+
+model Exercise {
+  id                  String                @id @default(cuid())
+  code                String                @unique
+  skill               SkillType
+  format              ExerciseFormat
+  titleGerman         String
+  instructionEgyptian String?
+  printedPage         Int
+  answerKeyPage       Int?
+  isMandatory         Boolean               @default(true)
+  origin              ContentOrigin         @default(ORIGINAL_TEXTBOOK)
+  verificationStatus  VerificationStatus    @default(KEY_VERIFIED)
+  unitId              String
+  unit                Unit                  @relation(fields: [unitId], references: [id])
+  questions           ExerciseQuestion[]
+  attempts            UserExerciseAttempt[]
+}
+
+model ExerciseQuestion {
+  id                   String   @id @default(cuid())
+  questionNumber       Int
+  promptGerman         String
+  options              Json?
+  officialAnswer       String
+  acceptedAlternatives String[]
+  explanationEgyptian  String   @db.Text
+  errorCategoryTag     String
+  discrepancyCode      String?
+  exerciseId           String
+  exercise             Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model ListeningPassage {
+  id                    String             @id @default(cuid())
+  code                  String             @unique
+  trackNumber           Int
+  germanTitle           String
+  arabicTitle           String
+  transcriptGerman      String?            @db.Text
+  translationArabic     String?            @db.Text
+  listeningTipsEgyptian String?            @db.Text
+  studentBookPage       Int
+  transcriptBookPage    Int
+  translationBookPage   Int?
+  origin                ContentOrigin      @default(VERIFIED_TRANSCRIPT_TTS)
+  verificationStatus    VerificationStatus @default(KEY_VERIFIED)
+  unitId                String
+  unit                  Unit               @relation(fields: [unitId], references: [id])
+}
+
+model ReadingPassage {
+  id                  String             @id @default(cuid())
+  code                String             @unique
+  passageNumber       Int
+  germanTitle         String
+  arabicTitle         String
+  passageGerman       String?            @db.Text
+  translationArabic   String?            @db.Text
+  studentBookPage     Int
+  translationBookPage Int?
+  answerKeyPage       Int?
+  origin              ContentOrigin      @default(ORIGINAL_TEXTBOOK)
+  verificationStatus  VerificationStatus @default(KEY_VERIFIED)
+  unitId              String
+  unit                Unit               @relation(fields: [unitId], references: [id])
+}
+
+model WritingPrompt {
+  id                  String @id @default(cuid())
+  code                String @unique
+  promptNumber        Int
+  germanTitle         String
+  instructionGerman   String @db.Text
+  instructionEgyptian String @db.Text
+  requiredPoints      String[]
+  modelAnswerGerman   String @db.Text
+  evaluationRubric    Json
+  printedPage         Int
+  unitId              String
+  unit                Unit   @relation(fields: [unitId], references: [id])
+}
+
+model SpeakingPrompt {
+  id               String        @id @default(cuid())
+  code             String        @unique
+  germanTitle      String
+  arabicTitle      String
+  scenarioEgyptian String        @db.Text
+  usefulPhrases    Json
+  roleplayTurns    Json
+  origin           ContentOrigin @default(ORIGINAL_TEXTBOOK)
+  unitId           String
+  unit             Unit          @relation(fields: [unitId], references: [id])
+}
+
+model AudioAsset {
+  id              String        @id @default(cuid())
+  textHash        String        @unique
+  sourceText      String        @db.Text
+  locale          String        @default("de-DE")
+  voiceName       String        @default("de-DE-ConradNeural")
+  category        AudioCategory
+  origin          ContentOrigin @default(ORIGINAL_TEXTBOOK)
+  status          AudioStatus   @default(PENDING)
+  storageUrl      String?       @db.Text
+  sourceReference String?
+  errorMessage    String?
+  createdAt       DateTime      @default(now())
+}
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  displayName           String?
+  currentUnitNumber     Int      @default(1)
+  dailyMinutesAvailable Int      @default(45)
+  inRecoveryMode        Boolean  @default(false)
+  lastActiveAt          DateTime @default(now())
+  createdAt             DateTime @default(now())
+}
+
+model UserUnitProgress {
+  id                     String  @id @default(cuid())
+  userId                 String
+  unitId                 String
+  unit                   Unit    @relation(fields: [unitId], references: [id])
+  textbookCoveragePct    Float   @default(0)
+  grammarMasteryPct      Float   @default(0)
+  listeningScorePct      Float   @default(0)
+  readingScorePct        Float   @default(0)
+  unitAssessmentScorePct Float   @default(0)
+  isUnitPassed           Boolean @default(false)
+
+  @@unique([userId, unitId])
+}
+
+model UserVocabularyState {
+  id                     String         @id @default(cuid())
+  userId                 String
+  vocabularyItemId       String
+  vocabularyItem         VocabularyItem @relation(fields: [vocabularyItemId], references: [id])
+  meaningRecognized      Boolean        @default(false)
+  independentRecallScore Float          @default(0)
+  spellingScore          Float          @default(0)
+  articleScore           Float          @default(0)
+  pluralScore            Float          @default(0)
+  audioRecognitionScore  Float          @default(0)
+  stability              Float          @default(0)
+  difficulty             Float          @default(5.0)
+  scheduledDays          Int            @default(0)
+  reps                   Int            @default(0)
+  lapses                 Int            @default(0)
+  inDangerZone           Boolean        @default(false)
+  lastReviewedAt         DateTime       @default(now())
+  nextReviewAt           DateTime       @default(now())
+
+  @@unique([userId, vocabularyItemId])
+}
+
+model UserExerciseAttempt {
+  id               String   @id @default(cuid())
+  userId           String
+  exerciseId       String
+  exercise         Exercise @relation(fields: [exerciseId], references: [id])
+  submittedAnswers Json
+  scorePercentage  Float
+  correctCount     Int
+  totalQuestions   Int
+  timeSpentSec     Int
+  createdAt        DateTime @default(now())
+}
+
+model UserErrorLog {
+  id              String    @id @default(cuid())
+  userId          String
+  skill           SkillType
+  errorCategory   String
+  sourceItemCode  String
+  userWrongAnswer String
+  expectedAnswer  String
+  diagnosisAr     String    @db.Text
+  isResolved      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+}
+
+model DailyMission {
+  id             String   @id @default(cuid())
+  userId         String
+  missionDate    DateTime @default(now())
+  isRecoveryMode Boolean  @default(false)
+  estimatedMin   Int      @default(35)
+  actualTimeSec  Int      @default(0)
+  isCompleted    Boolean  @default(false)
+  tasks          Json
+  createdAt      DateTime @default(now())
+}

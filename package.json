@@ -1,0 +1,33 @@
+{
+  "name": "deutsch-mit-kero",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npx prisma generate && next build",
+    "start": "next start",
+    "postinstall": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:seed": "npx prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "next": "14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/react": "^18.3.10",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "prisma": "^5.20.0",
+    "tailwindcss": "^3.4.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  }
+}
